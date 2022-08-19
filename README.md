@@ -2,7 +2,7 @@ This repo is a fork of <https://github.com/BurntSushi/toml> to provide line numb
 
 To use, add the line
 ```
-replace github.com/BurntSushi/toml => github.com/drebelsky/toml v0.0.1
+replace github.com/BurntSushi/toml => github.com/drebelsky/toml v0.0.2
 ```
 
 to your `go.mod`
