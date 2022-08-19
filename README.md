@@ -1,3 +1,12 @@
+This repo is a fork of <https://github.com/BurntSushi/toml> to provide line numbers for undecoded keys; it is otherwise the same.
+
+To use, add the line
+```
+replace github.com/BurntSushi/toml => github.com/drebelsky/toml v0.0.1
+```
+
+to your `go.mod`
+
 TOML stands for Tom's Obvious, Minimal Language. This Go package provides a
 reflection interface similar to Go's standard library `json` and `xml` packages.
 
