@@ -158,12 +158,13 @@ func (dec *Decoder) Decode(v interface{}) (MetaData, error) {
 	}
 
 	md := MetaData{
-		mapping: p.mapping,
-		keyInfo: p.keyInfo,
-		keys:    p.ordered,
-		decoded: make(map[string]struct{}, len(p.ordered)),
-		context: nil,
-		data:    data,
+		mapping:  p.mapping,
+		keyInfo:  p.keyInfo,
+		keys:     p.ordered,
+		keysInfo: p.orderedInfo,
+		decoded:  make(map[string]struct{}, len(p.ordered)),
+		context:  nil,
+		data:     data,
 	}
 	return md, md.unify(p.mapping, rv)
 }

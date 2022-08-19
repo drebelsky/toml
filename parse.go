@@ -16,7 +16,8 @@ type parser struct {
 	currentKey string   // Base key name for everything except hashes.
 	pos        Position // Current position in the TOML file.
 
-	ordered []Key // List of keys in the order that they appear in the TOML data.
+	ordered     []Key // List of keys in the order that they appear in the TOML data.
+	orderedInfo []keyInfo // List of keyInfo corresponding to keys in ordered
 
 	keyInfo   map[string]keyInfo     // Map keyname → info about the TOML key.
 	mapping   map[string]interface{} // Map keyname → key value.
@@ -63,11 +64,12 @@ func parse(data string) (p *parser, err error) {
 	}
 
 	p = &parser{
-		keyInfo:   make(map[string]keyInfo),
-		mapping:   make(map[string]interface{}),
-		lx:        lex(data),
-		ordered:   make([]Key, 0),
-		implicits: make(map[string]struct{}),
+		keyInfo:     make(map[string]keyInfo),
+		mapping:     make(map[string]interface{}),
+		lx:          lex(data),
+		ordered:     make([]Key, 0),
+		orderedInfo: make([]keyInfo, 0),
+		implicits:   make(map[string]struct{}),
 	}
 	for {
 		item := p.next()
@@ -163,6 +165,7 @@ func (p *parser) topLevel(item item) {
 		p.addContext(key, false)
 		p.setType("", tomlHash, item.pos)
 		p.ordered = append(p.ordered, key)
+		p.orderedInfo = append(p.orderedInfo, keyInfo{tomlType: tomlHash, pos: item.pos})
 	case itemArrayTableStart: // [[ .. ]]
 		name := p.nextPos()
 
@@ -175,6 +178,7 @@ func (p *parser) topLevel(item item) {
 		p.addContext(key, true)
 		p.setType("", tomlArrayHash, item.pos)
 		p.ordered = append(p.ordered, key)
+		p.orderedInfo = append(p.orderedInfo, keyInfo{tomlType: tomlArrayHash, pos: item.pos})
 	case itemKeyStart: // key = ..
 		outerContext := p.context
 		/// Read all the key parts (e.g. 'a' and 'b' in 'a.b')
@@ -200,6 +204,7 @@ func (p *parser) topLevel(item item) {
 		val, typ := p.value(vItem, false)
 		p.set(p.currentKey, val, typ, vItem.pos)
 		p.ordered = append(p.ordered, p.context.add(p.currentKey))
+		p.orderedInfo = append(p.orderedInfo, keyInfo{tomlType: typ, pos: vItem.pos})
 
 		/// Remove the context we added (preserving any context from [tbl] lines).
 		p.context = outerContext
@@ -431,6 +436,7 @@ func (p *parser) valueInlineTable(it item, parentIsArray bool) (interface{}, tom
 		val, typ := p.value(p.next(), false)
 		p.set(p.currentKey, val, typ, it.pos)
 		p.ordered = append(p.ordered, p.context.add(p.currentKey))
+		p.orderedInfo = append(p.orderedInfo, keyInfo{tomlType: typ, pos: it.pos})
 		hash[p.currentKey] = val
 
 		/// Restore context.

@@ -12,11 +12,12 @@ import (
 type MetaData struct {
 	context Key // Used only during decoding.
 
-	keyInfo map[string]keyInfo
-	mapping map[string]interface{}
-	keys    []Key
-	decoded map[string]struct{}
-	data    []byte // Input file; for errors.
+	keyInfo  map[string]keyInfo
+	mapping  map[string]interface{}
+	keys     []Key
+	keysInfo []keyInfo
+	decoded  map[string]struct{}
+	data     []byte // Input file; for errors.
 }
 
 // IsDefined reports if the key exists in the TOML data.
@@ -87,6 +88,30 @@ func (md *MetaData) Undecoded() []Key {
 		}
 	}
 	return undecoded
+}
+
+// UndecodedWithLines returns all keys and their associated line number that
+// have not been decoded in the order in which they appear in the original TOML
+// document.
+//
+// This includes keys that haven't been decoded because of a Primitive value.
+// Once the Primitive value is decoded, the keys will be considered decoded.
+//
+// Also note that decoding into an empty interface will result in no decoding,
+// and so no keys will be considered decoded.
+//
+// In this sense, the Undecoded keys correspond to keys in the TOML document
+// that do not have a concrete type in your representation.
+func (md *MetaData) UndecodedWithLines() ([]Key, []int) {
+	undecoded := make([]Key, 0, len(md.keys))
+	linenos := make([]int, 0, len(md.keys))
+	for i, key := range md.keys {
+		if _, ok := md.decoded[key.String()]; !ok {
+			undecoded = append(undecoded, key)
+			linenos = append(linenos, md.keysInfo[i].pos.Line)
+		}
+	}
+	return undecoded, linenos
 }
 
 // Key represents any TOML key, including key groups. Use (MetaData).Keys to get
